@@ -9,25 +9,25 @@ import CreatePlaylistButton from './components/CreatePlaylistButton'
 import SkeletonCard from './components/SkeletonCard'
 
 export default function Home() {
-const [searchTerm, setSearchTerm] = useState('')
-const [songs, setSongs] = useState<Song[]>([])
-const [loading, setLoading] = useState(false)
-const player = usePlayer() // 🚀 ¡Esto ahora te da todas las funciones!
-const abortControllerRef = useRef<AbortController | null>(null)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [songs, setSongs] = useState<Song[]>([])
+  const [loading, setLoading] = useState(false)
+  const player = usePlayer()
+  const abortControllerRef = useRef<AbortController | null>(null)
 
-const handleSearch = async () => {
-const query = searchTerm.trim()
- if (!query) return
+  const handleSearch = async () => {
+    const query = searchTerm.trim()
+    if (!query) return
 
- // 🚫 Cancelar búsqueda anterior
- if (abortControllerRef.current) {
- abortControllerRef.current.abort()
-}
+    // 🚫 Cancelar búsqueda anterior
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+    }
 
-const controller = new AbortController()
-abortControllerRef.current = controller
-setLoading(true)
-    setSongs([]) // Limpia resultados anteriores
+    const controller = new AbortController()
+    abortControllerRef.current = controller
+    setLoading(true)
+    setSongs([])
 
     try {
       const res = await fetch(
@@ -57,6 +57,7 @@ setLoading(true)
   return (
     <div className="min-h-screen bg-[#121212] p-4 pb-28">
       <div className="max-w-5xl mx-auto">
+      	{/* ... (Toda tu UI de búsqueda, grid, skeletons, etc. queda igual) ... */}
         {/* 🔍 Input de búsqueda */}
         <input
           type="text"
@@ -85,7 +86,6 @@ setLoading(true)
           <SongGrid
             songs={songs}
             estimatedResults={songs.length}
-            // ✅ 'onSelect' está perfecto, le pasa la lista al hook
             onSelect={(song, i) => player.playSong(song, i, songs)}
           />
         ) : (
@@ -99,14 +99,21 @@ setLoading(true)
       <PlayerBar
         currentSong={player.currentSong}
         isPlaying={player.isPlaying}
+        isLoadingSong={player.isLoadingSong} 
         togglePlay={player.togglePlay}
-        // ✅ CAMBIO: Ya no pasamos (songs)
         playNext={player.playNext}
         playPrevious={player.playPrevious}
         audioRef={player.audioRef}
         onTimeUpdate={player.handleTimeUpdate}
-        // ✅ CAMBIO: El hook se encarga de la lógica 'onEnded'
         onEnded={player.onEnded}
+      />
+
+      {/* 🎧 El tag de audio (invisible) que debe estar aquí */}
+      <audio
+        ref={player.audioRef}
+        onTimeUpdate={player.handleTimeUpdate}
+        onEnded={player.onEnded}
+      	onError={player.handleAudioError} // ✅ AÑADIDO
       />
     </div>
   )
