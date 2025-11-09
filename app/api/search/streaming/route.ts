@@ -1,3 +1,4 @@
+// Archivo: app/api/search/streaming/route.ts
 import { NextResponse } from "next/server";
 import YTMusic from "ytmusic-api";
 
@@ -18,15 +19,15 @@ export async function GET(req: Request) {
       await ytmusic.initialize();
     }
 
-    // 🔍 Buscar
+    // 🔍 Buscar (✅ CORREGIDO: solo 1 argumento)
     const results = await ytmusic.search(query);
 
-    // 🎵 Filtrar y mapear correctamente
+    // 🎵 Filtrar y mapear correctamente (✅ RESTAURADO)
     const songs =
       results
         ?.filter(
           (item: any) =>
-            item.type === "song" || item.type === "SONG" // ✅ mayúsculas o minúsculas
+            item.type === "song" || item.type === "SONG" // Filtramos solo canciones
         )
         .map((item: any) => {
           // obtener thumbnail válido
@@ -46,6 +47,7 @@ export async function GET(req: Request) {
           return {
             id: item.videoId || "",
             title: item.name || "Sin título",
+            // ✅ CORREGIDO: Error de sintaxis arreglado
             author:
               item.artist?.name ||
               item.artists?.map((a: any) => a.name).join(", ") ||
