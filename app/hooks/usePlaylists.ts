@@ -1,7 +1,7 @@
 // Archivo: app/hooks/usePlaylists.ts
 'use client'
 import { useState, useEffect } from 'react'
-import { Song } from './usePlayer' // Reutilizamos la interfaz de Song
+import { Song } from './usePlayer'
 
 export interface Playlist {
   id: string
@@ -14,7 +14,7 @@ const STORAGE_KEY = 'spotidavid_playlists'
 export function usePlaylists() {
   const [playlists, setPlaylists] = useState<Playlist[]>([])
 
-  // Cargar playlists desde localStorage
+  // 1. Cargar playlists desde localStorage
   useEffect(() => {
     try {
       const storedPlaylists = localStorage.getItem(STORAGE_KEY)
@@ -27,25 +27,25 @@ export function usePlaylists() {
     }
   }, [])
 
-  // Guardar en localStorage
+  // 2. Guardar en localStorage cada vez que 'playlists' cambia
   useEffect(() => {
-    if (playlists.length > 0) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(playlists))
+    // Evita guardar un array vacío al inicio si localStorage ya tenía algo
+    if (playlists.length > 0 || localStorage.getItem(STORAGE_KEY)) {
+       localStorage.setItem(STORAGE_KEY, JSON.stringify(playlists))
     }
   }, [playlists])
 
-  // 3. Función para crear una nueva playlist (MODIFICADA)
-  const createPlaylist = (name: string): string => { // <-- Devuelve string (el ID)
-    if (!name.trim()) return "" // No crear si no tiene nombre
+  // 3. Función para crear una nueva playlist
+  const createPlaylist = (name: string): string => {
+    if (!name.trim()) return "" 
 
     const newPlaylist: Playlist = {
       id: `playlist_${Date.now()}`,
       name: name,
       songs: [],
     }
-    setPlaylists((prevPlaylists) => [...prevPlaylists, newPlaylist])
-    
-    return newPlaylist.id // ✅ ¡DEVOLVEMOS EL ID!
+    setPlaylists((prev) => [...prev, newPlaylist])
+    return newPlaylist.id
   }
 
   // 4. Función para agregar una canción a una playlist
@@ -53,24 +53,27 @@ export function usePlaylists() {
     let playlistName = ''
     let songAdded = false
 
-    setPlaylists((prevPlaylists) =>
-      prevPlaylists.map((playlist) => {
+    setPlaylists((prev) =>
+      prev.map((playlist) => {
+        // Si no es la playlist correcta, no la toques
         if (playlist.id !== playlistId) {
           return playlist
         }
         
-        playlistName = playlist.name
+        playlistName = playlist.name // Guardamos el nombre para el alert
+
+        // --- ✅ LÓGICA ANTI-DUPLICADOS ---
         const songExists = playlist.songs.some((s) => s.id === song.id)
-        
         if (songExists) {
           console.log(`La canción "${song.title}" ya está en "${playlist.name}"`)
-          return playlist 
+          return playlist // Devuelve la playlist sin cambios
         }
+        // --- Fin de la lógica ---
 
         songAdded = true // Marcamos que se agregó
         return {
           ...playlist,
-          songs: [...playlist.songs, song],
+          songs: [...playlist.songs, song], // Agrega la canción
         }
       })
     )
@@ -83,5 +86,40 @@ export function usePlaylists() {
     }
   }
 
-  return { playlists, createPlaylist, addSongToPlaylist }
+  // 5. Función para borrar una playlist
+  const deletePlaylist = (playlistId: string) => {
+    setPlaylists((prev) => prev.filter(p => p.id !== playlistId))
+  }
+
+  // 6. Función para renombrar una playlist
+  const renamePlaylist = (playlistId: string, newName: string) => {
+    if (!newName.trim()) return
+    setPlaylists((prev) =>
+      prev.map((p) => (p.id === playlistId ? { ...p, name: newName.trim() } : p))
+    )
+  }
+
+  // 7. Función para quitar canción de una playlist
+  const removeSongFromPlaylist = (songId: string, playlistId: string) => {
+    setPlaylists((prev) =>
+      prev.map((p) => {
+        if (p.id !== playlistId) return p
+        // Devolvemos la playlist pero con la canción filtrada
+        return {
+          ...p,
+          songs: p.songs.filter(s => s.id !== songId),
+        }
+      })
+    )
+  }
+
+  // 8. Exportar todas las funciones
+  return { 
+    playlists, 
+    createPlaylist, 
+    addSongToPlaylist,
+    deletePlaylist,
+    renamePlaylist,
+    removeSongFromPlaylist
+  }
 }

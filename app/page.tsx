@@ -2,44 +2,64 @@
 'use client'
 
 import React, { useState, useRef } from 'react'
-import SongGrid from './components/SongGrid'
+import PlaylistView from './components/PlaylistView'
+import SearchResultsView from './components/SearchResultsView'
 import PlayerBar from './components/PlayerBar'
-import { usePlayer, Song } from './hooks/usePlayer'
+import { usePlayer, Song } from './hooks/usePlayer' // ✅ Importa el hook actualizado
 import { usePlaylists, Playlist } from './hooks/usePlaylists'
-import CreatePlaylistButton from './components/CreatePlaylistButton'
-import SkeletonCard from './components/SkeletonCard'
 import { ListMusic, Play, Home as HomeIcon } from 'lucide-react' 
 import CreatePlaylistModal from './components/CreatePlaylistModal'
+import PlaylistDetailModal from './components/PlaylistDetailModal' 
+import AddToPlaylistModal from './components/AddToPlaylistModal'
+import Toast from './components/Toast' 
+import FullScreenPlayer from './components/FullScreenPlayer'
 
 export default function Home() {
+  // --- ESTADOS ---
   const [searchTerm, setSearchTerm] = useState('')
   const [songs, setSongs] = useState<Song[]>([])
   const [loading, setLoading] = useState(false)
-  const player = usePlayer()
-  const playlistsHook = usePlaylists()
   const abortControllerRef = useRef<AbortController | null>(null)
+  const [searchSubmitted, setSearchSubmitted] = useState(false)
+  
+  const player = usePlayer() // ✅ Tu hook 'player' ahora tiene todo
+  const playlistsHook = usePlaylists()
 
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  const [pendingSong, setPendingSong] = useState<Song | null>(null) // Para "recordar" la canción
-  const isAtHome = !loading && songs.length === 0 && searchTerm.trim() === ''
+  const [isModalOpen, setIsModalOpen] = useState(false) 
+  const [pendingSong, setPendingSong] = useState<Song | null>(null)
+  const [editingPlaylistId, setEditingPlaylistId] = useState<string | null>(null) 
+  const [isAddToPlaylistModalOpen, setIsAddToPlaylistModalOpen] = useState(false)
+  const [songToAdd, setSongToAdd] = useState<Song | null>(null)
+  const [toastMessage, setToastMessage] = useState('')
+  const [toastTrigger, setToastTrigger] = useState(0)
+  const [isFullScreenPlayerOpen, setIsFullScreenPlayerOpen] = useState(false)
 
-  // ✅ 2. MODIFICAR LA FUNCIÓN 'handleGoHome'
+  // --- VARIABLES DERIVADAS ---
+  const isAtHome = !searchSubmitted
+  const editingPlaylist = playlistsHook.playlists.find(p => p.id === editingPlaylistId) || null
+
+  // --- HANDLERS (Toast, Búsqueda, Home) ---
+  const showToast = (message: string) => {
+    setToastMessage(message)
+    setToastTrigger(Date.now())
+  }
+
   const handleGoHome = () => {
-    // Si ya estamos en home, no hacer nada
     if (isAtHome) return 
-
     setSearchTerm('')
     setSongs([])
     setLoading(false)
+    setSearchSubmitted(false)
     if (abortControllerRef.current) {
       abortControllerRef.current.abort()
     }
   }
 
   const handleSearch = async () => {
-    // ... (la función de búsqueda queda igual) ...
     const query = searchTerm.trim()
     if (!query) return
+    setSearchSubmitted(true) 
+    
     if (abortControllerRef.current) {
       abortControllerRef.current.abort()
     }
@@ -59,9 +79,9 @@ export default function Home() {
       }
     } catch (err) {
       if (err instanceof DOMException && err.name === 'AbortError') {
-        console.log('🔸 Búsqueda cancelada')
+        console.log('Busqueda cancelada')
       } else {
-        console.error('❌ Error al buscar:', err)
+        console.error('Error al buscar:', err)
       }
     } finally {
       if (!controller.signal.aborted) {
@@ -70,146 +90,116 @@ export default function Home() {
     }
   }
 
-// ✅ 4. MODIFICADA (Botón "Crear Playlist" de la Home)
-  // Ahora solo abre el modal
+  // --- HANDLERS (Playlists) ---
   const handleCreatePlaylist = () => {
-    setPendingSong(null) // Nos aseguramos de que no haya canción pendiente
+    setPendingSong(null) 
     setIsModalOpen(true)
   }
 
-  // ✅ 5. MODIFICADA (Botón "+" en una canción)
-  // Ahora abre el modal si no hay playlists, o agrega directo si ya hay
   const handleAddToPlaylist = (song: Song) => {
     if (playlistsHook.playlists.length === 0) {
-      // No hay playlists, abrimos el modal "recordando" qué canción es
       setPendingSong(song)
       setIsModalOpen(true)
     } else {
-      // Ya hay playlists, (lógica simple) agregamos a la primera
-      const firstPlaylistId = playlistsHook.playlists[0].id
-      playlistsHook.addSongToPlaylist(song, firstPlaylistId)
-      setPendingSong(null) // Limpiamos por si acaso
+      setSongToAdd(song)
+      setIsAddToPlaylistModalOpen(true)
     }
   }
   
-  // ✅ NUEVA (Función que llama el Modal al "Crear")
   const handleConfirmCreatePlaylist = (name: string) => {
-    // 1. Creamos la playlist y obtenemos su ID
     const newPlaylistId = playlistsHook.createPlaylist(name)
-    
-    // 2. Si estábamos "recordando" una canción, la agregamos
     if (pendingSong) {
       playlistsHook.addSongToPlaylist(pendingSong, newPlaylistId)
-      setPendingSong(null) // Limpiamos la canción pendiente
+      setPendingSong(null)
     }
-    
-    // 3. Cerramos el modal
     setIsModalOpen(false)
   }
   
+  const handleSelectPlaylist = (playlistId: string) => {
+    if (songToAdd) {
+      playlistsHook.addSongToPlaylist(songToAdd, playlistId)
+    }
+    setIsAddToPlaylistModalOpen(false)
+    setSongToAdd(null)
+  }
+
   const playPlaylist = (playlist: Playlist) => {
-    // ... (la función queda igual) ...
     if (playlist.songs.length === 0) {
-      alert("¡Esta playlist está vacía! Agregá canciones.")
+      showToast("¡Esta playlist está vacía! Agregá canciones.")
       return;
     }
     player.playSong(playlist.songs[0], 0, playlist.songs)
   }
 
+  const handleShufflePlay = (playlist: Playlist) => {
+    if (playlist.songs.length === 0) {
+      showToast("¡Esta playlist está vacía!")
+      return;
+    }
+    const shuffledSongs = [...playlist.songs];
+    for (let i = shuffledSongs.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffledSongs[i], shuffledSongs[j]] = [shuffledSongs[j], shuffledSongs[i]];
+    }
+    player.playSong(shuffledSongs[0], 0, shuffledSongs);
+  }
+
+  // --- RENDERIZADO (JSX) ---
   return (
     <div className="min-h-screen bg-[#121212] p-4 pb-28 relative">
       
-      {/* ✅ 3. BOTÓN DE HOME (SIEMPRE VISIBLE, ESTILO DINÁMICO) */}
-      {/* Ya no tiene el 'if' que lo oculta */}
-      <button
-        onClick={handleGoHome}
-        title="Volver al inicio"
-        disabled={isAtHome} // Deshabilitado si ya estamos en home
-        className={`
-          absolute 
-          top-6 left-6 
-          p-3 
-          rounded-full 
-          flex 
-          items-center 
-          justify-center 
-          transition 
-          z-20
-          ${isAtHome
-            ? 'bg-neutral-800 text-neutral-500 cursor-default' // Estilo INACTIVO (gris)
-            : 'bg-green-500 text-black hover:scale-110 hover:bg-green-400 cursor-pointer' // Estilo ACTIVO (verde)
-          }
-        `}
-      >
-        <HomeIcon size={24} strokeWidth={2.5} /> 
-      </button>
-
+      {/* Contenido Principal */}
       <div className="max-w-5xl mx-auto">
-        {/* 🔍 Input de búsqueda (ya tiene el padding 'pl-16', está perfecto) */}
-        <input
-          type="text"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-          placeholder="Buscar canciones y presiona Enter..."
-          className="w-full p-4 pl-16 rounded-lg shadow-sm border border-gray-700 bg-[#282828] text-[#e1e1e1] focus:outline-none focus:ring-2 focus:ring-[#1db954]"
-        />
-
-        {/* ... (El resto del archivo queda exactamente igual) ... */}
         
-        {/* PANTALLA INICIAL (Playlists) */}
-        {/* Usamos la variable 'isAtHome' para mostrar esto */}
-        {isAtHome && (
-          <div className="mt-10">
-            <h2 className="text-white text-2xl font-bold mb-5 px-2">Tus Playlists</h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-4 gap-y-6 px-2">
-            <CreatePlaylistButton onClick={handleCreatePlaylist} />
-                          
-              {/* Listar Playlists Existentes */}
-              {playlistsHook.playlists.map(playlist => (
-                <div 
-                  key={playlist.id} 
-                  className="group relative bg-neutral-900/70 hover:bg-neutral-800 transition rounded-xl p-2 shadow-md"
-                >
-                  <div 
-                    onClick={() => playPlaylist(playlist)}
-                    className="absolute bottom-[6.5rem] right-4 w-12 h-12 bg-green-500 rounded-full flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 group-hover:bottom-[7rem] transition-all duration-300 transform cursor-pointer z-10"
-                  >
-                    <Play size={24} className="text-black ml-0.5" />
-                  </div>
-                  <div className="relative w-full aspect-square rounded-lg bg-neutral-800 flex items-center justify-center overflow-hidden mb-2">
-                    <ListMusic size={48} className="text-gray-500" />
-                  </div>
-                  <div className="mt-2 text-sm text-white truncate font-medium">{playlist.name}</div>
-                  <div className="text-xs text-neutral-400 truncate">{playlist.songs.length} canciones</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+        {/* Bloque de Home + Búsqueda */}
+        <div className="relative w-full">
+          {/* Botón de Home */}
+          <button
+            onClick={handleGoHome}
+            title="Volver al inicio"
+            disabled={isAtHome}
+            className={`
+              absolute top-1/2 left-1.25 -translate-y-1/2 p-3 rounded-lg flex 
+              items-center justify-center transition z-20
+              ${isAtHome
+                ? 'bg-neutral-800 text-neutral-500 cursor-default'
+                : 'bg-green-500 text-black hover:scale-110 hover:bg-green-400 cursor-pointer'
+              }
+            `}
+          >
+            <HomeIcon size={24} strokeWidth={2.5} /> 
+          </button>
+          {/* Input de búsqueda */}
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+            placeholder="Buscar canciones y presiona Enter..."
+            className="w-full p-4 pl-16 rounded-lg shadow-sm border border-gray-700 bg-[#282828] text-[#e1e1e1] focus:outline-none focus:ring-2 focus:ring-[#1db954]"
+          />
+        </div>
 
-        {/* 🎵 Mostrar resultados de búsqueda o Skeletons */}
-        {loading ? (
-          <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-4 gap-y-6 px-2">
-            {Array.from({ length: 10 }).map((_, i) => (
-              <SkeletonCard key={i} />
-            ))}
-          </div>
-        ) : songs.length > 0 ? (
-          <SongGrid
-            songs={songs}
-            estimatedResults={songs.length}
-            onSelect={(song, i) => player.playSong(song, i, songs)}
-            onAddToPlaylist={handleAddToPlaylist}
+        {/* Lógica de Vistas */}
+        {isAtHome ? (
+          <PlaylistView 
+            playlists={playlistsHook.playlists}
+            onCreatePlaylist={handleCreatePlaylist}
+            onPlayPlaylist={playPlaylist}
+            onOpenPlaylistDetails={(id) => setEditingPlaylistId(id)}
           />
         ) : (
-          !isAtHome && !loading && ( // Modificado para que no se muestre en home
-            <p className="text-center text-gray-500 mt-12">Sin resultados para "{searchTerm}"</p>
-          )
+          <SearchResultsView
+            loading={loading}
+            songs={songs}
+            searchTerm={searchTerm}
+            onSelectSong={player.playSong}
+            onAddToPlaylist={handleAddToPlaylist}
+          />
         )}
       </div>
 
-      {/* 🎶 Player */}
+      {/* Player Bar (Fuera del contenido principal) */}
       <PlayerBar
         currentSong={player.currentSong}
         isPlaying={player.isPlaying}
@@ -220,20 +210,76 @@ export default function Home() {
         audioRef={player.audioRef}
         onTimeUpdate={player.handleTimeUpdate}
         onEnded={player.onEnded}
+        onOpenFullScreen={() => setIsFullScreenPlayerOpen(true)}
       />
 
-      {/* 🎧 El tag de audio (invisible) */}
+      {/* Audio Tag (Invisible) */}
       <audio
         ref={player.audioRef}
-        onTimeUpdate={player.handleTimeUpdate}
-        onEnded={player.onEnded}
+        onTimeUpdate={player.handleTimeUpdate} // ✅ Se conecta al hook
+        onEnded={player.onEnded} // ✅ Se conecta al hook
         onError={player.handleAudioError}
       />
-      {/* ✅ AÑADIR EL MODAL AL FINAL DEL TODO */}
+
+      {/* --- LOS MODALS + TOAST --- */}
       <CreatePlaylistModal 
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSubmit={handleConfirmCreatePlaylist}
+      />
+
+      <PlaylistDetailModal
+        isOpen={!!editingPlaylist}
+        onClose={() => setEditingPlaylistId(null)}
+        playlist={editingPlaylist}
+        onRename={(newName) => {
+          if (editingPlaylist) playlistsHook.renamePlaylist(editingPlaylist.id, newName)
+        }}
+        onDelete={() => {
+          if (editingPlaylist) playlistsHook.deletePlaylist(editingPlaylist.id)
+          setEditingPlaylistId(null)
+        }}
+        onRemoveSong={(songId) => {
+          if (editingPlaylist) playlistsHook.removeSongFromPlaylist(songId, editingPlaylist.id)
+        }}
+        onShufflePlay={() => {
+          if (editingPlaylist) handleShufflePlay(editingPlaylist)
+        }}
+        onPlaySong={(song, index, queue) => {
+          player.playSong(song, index, queue)
+        }}
+      />
+      
+      <AddToPlaylistModal
+        isOpen={isAddToPlaylistModalOpen}
+        onClose={() => setIsAddToPlaylistModalOpen(false)}
+        song={songToAdd}
+        playlists={playlistsHook.playlists}
+        onSelectPlaylist={handleSelectPlaylist}
+        onShowToast={showToast}
+      />
+
+      <Toast message={toastMessage} trigger={toastTrigger} />
+      
+      {/* ✅ Reproductor Grande (ahora recibe todo el objeto 'player') */}
+      <FullScreenPlayer
+        isOpen={isFullScreenPlayerOpen}
+        onClose={() => setIsFullScreenPlayerOpen(false)}
+        player={{
+          currentSong: player.currentSong,
+          isPlaying: player.isPlaying,
+          isLoadingSong: player.isLoadingSong,
+          togglePlay: player.togglePlay,
+          playNext: player.playNext,
+          playPrevious: player.playPrevious,
+          currentQueue: player.currentQueue,
+          currentTime: player.currentTime,
+          duration: player.duration,
+          seek: player.seek,
+          // ✅ CAMBIO: Renombramos 'setCurrentSong' a 'playSong'
+          playSong: player.playSong,
+          // (Ya no necesitamos pasar setCurrentSongIndex)
+        }}
       />
     </div>
   )

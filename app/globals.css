@@ -277,3 +277,45 @@ main {
 .animate-fadeIn {
   animation: fadeIn 0.35s ease forwards;
 }
+/* --- Animación de Brillo para Texto --- */
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* --- Animación de Brillo para Texto --- */
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.text-shimmer-green {
+  /* 1. El gradiente (con el verde Spotify) */
+  background: linear-gradient(
+    to right, 
+    #60ef93 20%,  /* Verde Spotify */
+    #bdffb7 100%, 
+    #1DB954 80%   
+  );
+  
+  /* 2. Hacemos el gradiente el doble de ancho */
+  background-size: 200% auto;
+  
+  /* 3. Hacemos que el fondo se aplique solo al texto */
+  background-clip: text;
+  -webkit-background-clip: text;
+  
+  /* 4. Hacemos el texto transparente para que se vea el fondo */
+  color: transparent;
+  
+  /* 5. Aplicamos la animación en bucle */
+  animation: shimmer 6s linear infinite;
+}

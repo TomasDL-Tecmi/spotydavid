@@ -1,23 +1,53 @@
+// Archivo: app/components/CreatePlaylistButton.tsx
 'use client'
 
-import React from 'react'
 import { Plus } from 'lucide-react'
 
 interface CreatePlaylistButtonProps {
-  onClick?: () => void
+  onClick: () => void
 }
 
 export default function CreatePlaylistButton({ onClick }: CreatePlaylistButtonProps) {
   return (
-    <div
-      onClick={onClick}
-      className="group cursor-pointer aspect-square w-full sm:w-44 md:w-48 bg-[#181818] hover:bg-[#282828] border border-[#2a2a2a] rounded-lg flex flex-col items-center justify-center transition-all duration-200 hover:scale-[1.02] shadow-md"
+    // ✅ Usamos exactamente las mismas clases que la tarjeta de playlist
+    <div 
+      onClick={onClick} 
+      className="
+        group 
+        relative 
+        bg-neutral-900/70 
+        hover:bg-neutral-800 
+        transition 
+        rounded-xl 
+        p-2 
+        shadow-md
+        flex flex-col 
+        cursor-pointer
+      "
     >
-      <div className="flex flex-col items-center justify-center text-center text-gray-400 group-hover:text-white transition-colors duration-200">
-        <div className="bg-[#1db954] text-black p-3 rounded-full mb-3 group-hover:scale-110 transition-transform">
-          <Plus className="w-6 h-6" />
-        </div>
-        <p className="font-semibold">Crear playlist</p>
+      {/* 1. El "hueco" (la portada) */}
+      <div className="
+        relative 
+        w-full 
+        aspect-square 
+        rounded-lg 
+        bg-neutral-800 
+        flex 
+        items-center 
+        justify-center 
+        overflow-hidden 
+        mb-2
+        transition
+        group-hover:bg-neutral-700
+      ">
+        {/* El ícono de Más (+) */}
+        <Plus size={48} className="text-gray-500 group-hover:text-white transition" />
+      </div>
+
+      {/* 2. El texto */}
+      <div className="mt-2 cursor-pointer px-1">
+        <div className="text-sm text-white truncate font-medium">Crear nueva playlist</div>
+        <div className="text-xs text-neutral-400 truncate">&nbsp;</div> {/* Espacio vacío para alinear */}
       </div>
     </div>
   )
