@@ -9,6 +9,7 @@ import { usePlaylists, Playlist } from './hooks/usePlaylists'
 import CreatePlaylistButton from './components/CreatePlaylistButton'
 import SkeletonCard from './components/SkeletonCard'
 import { ListMusic, Play, Home as HomeIcon } from 'lucide-react' 
+import CreatePlaylistModal from './components/CreatePlaylistModal'
 
 export default function Home() {
   const [searchTerm, setSearchTerm] = useState('')
@@ -18,8 +19,8 @@ export default function Home() {
   const playlistsHook = usePlaylists()
   const abortControllerRef = useRef<AbortController | null>(null)
 
-  // ✅ 1. DEFINIR SI ESTAMOS EN "HOME"
-  // Esta variable es 'true' si la búsqueda está vacía, no hay canciones y no está cargando.
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [pendingSong, setPendingSong] = useState<Song | null>(null) // Para "recordar" la canción
   const isAtHome = !loading && songs.length === 0 && searchTerm.trim() === ''
 
   // ✅ 2. MODIFICAR LA FUNCIÓN 'handleGoHome'
@@ -69,32 +70,41 @@ export default function Home() {
     }
   }
 
+// ✅ 4. MODIFICADA (Botón "Crear Playlist" de la Home)
+  // Ahora solo abre el modal
   const handleCreatePlaylist = () => {
-    // ... (la función queda igual) ...
-    const playlistName = prompt('Dale un nombre a tu nueva playlist:')
-    if (playlistName) {
-      playlistsHook.createPlaylist(playlistName)
-    }
+    setPendingSong(null) // Nos aseguramos de que no haya canción pendiente
+    setIsModalOpen(true)
   }
 
+  // ✅ 5. MODIFICADA (Botón "+" en una canción)
+  // Ahora abre el modal si no hay playlists, o agrega directo si ya hay
   const handleAddToPlaylist = (song: Song) => {
-    // ... (la función queda igual) ...
     if (playlistsHook.playlists.length === 0) {
-      alert('¡Primero tenés que crear una playlist!')
-      const playlistName = prompt('Dale un nombre a tu nueva playlist:')
-      if (playlistName) {
-        playlistsHook.createPlaylist(playlistName)
-        setTimeout(() => {
-          const firstPlaylistId = playlistsHook.playlists[0]?.id
-          if (firstPlaylistId) {
-            playlistsHook.addSongToPlaylist(song, firstPlaylistId)
-          }
-        }, 100) 
-      }
-      return
+      // No hay playlists, abrimos el modal "recordando" qué canción es
+      setPendingSong(song)
+      setIsModalOpen(true)
+    } else {
+      // Ya hay playlists, (lógica simple) agregamos a la primera
+      const firstPlaylistId = playlistsHook.playlists[0].id
+      playlistsHook.addSongToPlaylist(song, firstPlaylistId)
+      setPendingSong(null) // Limpiamos por si acaso
     }
-    const firstPlaylistId = playlistsHook.playlists[0].id
-    playlistsHook.addSongToPlaylist(song, firstPlaylistId)
+  }
+  
+  // ✅ NUEVA (Función que llama el Modal al "Crear")
+  const handleConfirmCreatePlaylist = (name: string) => {
+    // 1. Creamos la playlist y obtenemos su ID
+    const newPlaylistId = playlistsHook.createPlaylist(name)
+    
+    // 2. Si estábamos "recordando" una canción, la agregamos
+    if (pendingSong) {
+      playlistsHook.addSongToPlaylist(pendingSong, newPlaylistId)
+      setPendingSong(null) // Limpiamos la canción pendiente
+    }
+    
+    // 3. Cerramos el modal
+    setIsModalOpen(false)
   }
   
   const playPlaylist = (playlist: Playlist) => {
@@ -153,7 +163,9 @@ export default function Home() {
           <div className="mt-10">
             <h2 className="text-white text-2xl font-bold mb-5 px-2">Tus Playlists</h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-4 gap-y-6 px-2">
-              <CreatePlaylistButton onClick={handleCreatePlaylist} />
+            <CreatePlaylistButton onClick={handleCreatePlaylist} />
+                          
+              {/* Listar Playlists Existentes */}
               {playlistsHook.playlists.map(playlist => (
                 <div 
                   key={playlist.id} 
@@ -216,6 +228,12 @@ export default function Home() {
         onTimeUpdate={player.handleTimeUpdate}
         onEnded={player.onEnded}
         onError={player.handleAudioError}
+      />
+      {/* ✅ AÑADIR EL MODAL AL FINAL DEL TODO */}
+      <CreatePlaylistModal 
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSubmit={handleConfirmCreatePlaylist}
       />
     </div>
   )

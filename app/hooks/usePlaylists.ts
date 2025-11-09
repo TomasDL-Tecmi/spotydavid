@@ -9,13 +9,12 @@ export interface Playlist {
   songs: Song[]
 }
 
-// Esta es la "llave" donde se guardan los datos en el navegador
 const STORAGE_KEY = 'spotidavid_playlists'
 
 export function usePlaylists() {
   const [playlists, setPlaylists] = useState<Playlist[]>([])
 
-  // 1. Cargar playlists desde localStorage (sólo 1 vez, al inicio)
+  // Cargar playlists desde localStorage
   useEffect(() => {
     try {
       const storedPlaylists = localStorage.getItem(STORAGE_KEY)
@@ -24,54 +23,51 @@ export function usePlaylists() {
       }
     } catch (err) {
       console.error("Error cargando playlists:", err)
-      localStorage.removeItem(STORAGE_KEY) // Limpiar si está corrupto
+      localStorage.removeItem(STORAGE_KEY)
     }
   }, [])
 
-  // 2. Guardar en localStorage (cada vez que 'playlists' cambie)
+  // Guardar en localStorage
   useEffect(() => {
-    try {
-      // No guardar si 'playlists' está vacío al inicio (para evitar sobreescribir)
-      if (playlists.length > 0) {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(playlists))
-      }
-    } catch (err) {
-      console.error("Error guardando playlists:", err)
+    if (playlists.length > 0) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(playlists))
     }
   }, [playlists])
 
-  // 3. Función para crear una nueva playlist
-  const createPlaylist = (name: string) => {
-    if (!name.trim()) return // No crear si no tiene nombre
+  // 3. Función para crear una nueva playlist (MODIFICADA)
+  const createPlaylist = (name: string): string => { // <-- Devuelve string (el ID)
+    if (!name.trim()) return "" // No crear si no tiene nombre
 
     const newPlaylist: Playlist = {
-      id: `playlist_${Date.now()}`, // ID único basado en la fecha
+      id: `playlist_${Date.now()}`,
       name: name,
       songs: [],
     }
     setPlaylists((prevPlaylists) => [...prevPlaylists, newPlaylist])
+    
+    return newPlaylist.id // ✅ ¡DEVOLVEMOS EL ID!
   }
 
   // 4. Función para agregar una canción a una playlist
   const addSongToPlaylist = (song: Song, playlistId: string) => {
     let playlistName = ''
+    let songAdded = false
+
     setPlaylists((prevPlaylists) =>
       prevPlaylists.map((playlist) => {
-        // Si no es la playlist correcta, no la toques
         if (playlist.id !== playlistId) {
           return playlist
         }
         
-        playlistName = playlist.name // Guardamos el nombre para el alert
-
-        // Evitar duplicados
+        playlistName = playlist.name
         const songExists = playlist.songs.some((s) => s.id === song.id)
+        
         if (songExists) {
           console.log(`La canción "${song.title}" ya está en "${playlist.name}"`)
-          return playlist // Devolver la playlist sin cambios
+          return playlist 
         }
 
-        // Agregar la canción
+        songAdded = true // Marcamos que se agregó
         return {
           ...playlist,
           songs: [...playlist.songs, song],
@@ -80,8 +76,10 @@ export function usePlaylists() {
     )
     
     // Damos feedback al usuario
-    if (playlistName) {
+    if (songAdded && playlistName) {
       alert(`"${song.title}" se agregó a "${playlistName}"`)
+    } else if (playlistName) {
+      alert(`"${song.title}" ya estaba en "${playlistName}"`)
     }
   }
 
