@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Pablo y Luis son gays",
+  title: "DaviFy",
   description: "This page was created with educational purposes only. We don't promove piracy in any way.",
 };
 
