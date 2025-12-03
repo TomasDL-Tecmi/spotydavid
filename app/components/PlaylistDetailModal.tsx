@@ -1,12 +1,10 @@
-// Archivo: app/components/PlaylistDetailModal.tsx
 'use client'
 
 import { useState, useEffect } from 'react'
 import { Playlist } from '../hooks/usePlaylists'
 import { Song } from '../hooks/usePlayer'
 import { X, Edit2, Trash2, Save, Shuffle, Play, Trash } from 'lucide-react'
-// ✅ 1. Importar el nuevo modal
-import ConfirmModal from './ConfirmModal' 
+import ConfirmModal from './ConfirmModal'
 
 interface PlaylistDetailModalProps {
   playlist: Playlist | null
@@ -29,11 +27,10 @@ export default function PlaylistDetailModal({
   onShufflePlay,
   onPlaySong,
 }: PlaylistDetailModalProps) {
-  
+
   const [isEditing, setIsEditing] = useState(false)
   const [name, setName] = useState(playlist?.name || '')
-  
-  // ✅ 2. Añadir estado para el modal de confirmación
+
   const [isConfirmOpen, setIsConfirmOpen] = useState(false)
 
   useEffect(() => {
@@ -41,8 +38,8 @@ export default function PlaylistDetailModal({
       setName(playlist.name)
     }
     setIsEditing(false)
-    setIsConfirmOpen(false) // Asegurarse de que esté cerrado al abrir
-  }, [playlist, isOpen]) // 'isOpen' resetea el modal
+    setIsConfirmOpen(false)
+  }, [playlist, isOpen])
 
   if (!isOpen || !playlist) return null
 
@@ -55,29 +52,24 @@ export default function PlaylistDetailModal({
     }
   }
 
-  // ✅ 3. Modificado: Ya no usa window.confirm, solo abre el modal
   const handleDeletePlaylist = () => {
     setIsConfirmOpen(true)
   }
 
-  // ✅ 4. Nueva función para manejar la confirmación
   const handleConfirmDelete = () => {
-    onDelete()  // Llama a la función de borrado de page.tsx
-    onClose()   // Cierra el modal de detalles (y este modal se cierra con él)
+    onDelete()
+    onClose()
   }
 
   return (
-    // Backdrop (Fondo)
-    <div 
+    <div
       onClick={onClose}
       className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"
     >
-      {/* Contenedor del Modal */}
       <div
         onClick={(e) => e.stopPropagation()}
         className="bg-neutral-900 rounded-lg shadow-xl w-full max-w-lg h-[80vh] flex flex-col"
       >
-        {/* Header con título y botones */}
         <div className="p-6 border-b border-neutral-700 flex justify-between items-center">
           {isEditing ? (
             <input
@@ -92,24 +84,24 @@ export default function PlaylistDetailModal({
           ) : (
             <h2 className="text-white text-2xl font-bold">{playlist.name}</h2>
           )}
-          
+
           <div className="flex items-center gap-4">
-            <button 
-              onClick={handleRename} 
+            <button
+              onClick={handleRename}
               className="text-neutral-400 hover:text-white cursor-pointer"
               title={isEditing ? "Guardar" : "Renombrar"}
             >
               {isEditing ? <Save size={20} /> : <Edit2 size={20} />}
             </button>
-            <button 
-              onClick={handleDeletePlaylist} // ✅ Llama a la función que abre el modal
+            <button
+              onClick={handleDeletePlaylist}
               className="text-neutral-400 hover:text-red-500 cursor-pointer"
               title="Borrar playlist"
             >
               <Trash2 size={20} />
             </button>
-            <button 
-              onClick={onClose} 
+            <button
+              onClick={onClose}
               className="text-neutral-400 hover:text-white cursor-pointer"
               title="Cerrar"
             >
@@ -118,7 +110,6 @@ export default function PlaylistDetailModal({
           </div>
         </div>
 
-        {/* Botón de Reproducción Aleatoria */}
         <div className="p-6">
           <button
             onClick={onShufflePlay}
@@ -136,13 +127,12 @@ export default function PlaylistDetailModal({
           </button>
         </div>
 
-        {/* Lista de Canciones */}
         <div className="flex-1 overflow-y-auto px-6 pb-6">
           {playlist.songs.length > 0 ? (
             <ul className="space-y-2">
               {playlist.songs.map((song, index) => (
-                <li 
-                  key={song.id} 
+                <li
+                  key={song.id}
                   className="flex items-center gap-3 p-2 rounded-md hover:bg-neutral-800 group"
                 >
                   <img src={song.thumbnail} alt={song.title} className="w-10 h-10 rounded" />
@@ -150,15 +140,14 @@ export default function PlaylistDetailModal({
                     <p className="text-white text-sm font-medium truncate">{song.title}</p>
                     <p className="text-neutral-400 text-xs truncate">{song.author}</p>
                   </div>
-                  {/* Botones de acción de la canción */}
-                  <button 
+                  <button
                     onClick={() => onPlaySong(song, index, playlist.songs)}
                     className="text-neutral-400 hover:text-white ml-auto opacity-0 group-hover:opacity-100 transition cursor-pointer"
                     title="Reproducir"
                   >
                     <Play size={18} />
                   </button>
-                  <button 
+                  <button
                     onClick={() => onRemoveSong(song.id)}
                     className="text-neutral-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition cursor-pointer"
                     title="Quitar de la playlist"
@@ -174,7 +163,6 @@ export default function PlaylistDetailModal({
         </div>
       </div>
 
-      {/* ✅ 5. Renderizar el modal de confirmación (aparecerá encima) */}
       <ConfirmModal
         isOpen={isConfirmOpen}
         onClose={() => setIsConfirmOpen(false)}

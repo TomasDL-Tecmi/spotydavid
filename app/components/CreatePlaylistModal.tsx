@@ -1,4 +1,3 @@
-// Archivo: app/components/CreatePlaylistModal.tsx
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -17,7 +16,6 @@ export default function CreatePlaylistModal({
 }: CreatePlaylistModalProps) {
   const [name, setName] = useState('')
 
-  // Limpiar el nombre cuando el modal se cierra
   useEffect(() => {
     if (isOpen) {
       setName('')
@@ -31,21 +29,17 @@ export default function CreatePlaylistModal({
     }
   }
 
-  // Si no está abierto, no renderizar nada
   if (!isOpen) return null
 
   return (
-    // 1. Fondo (Backdrop)
-    <div 
+    <div
       onClick={onClose}
       className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
     >
-      {/* 2. Contenedor del Modal (evita que el clic se propague al fondo) */}
       <div
         onClick={(e) => e.stopPropagation()}
         className="bg-neutral-800 rounded-lg shadow-xl w-full max-w-sm p-6 relative"
       >
-        {/* Botón de Cerrar (X) */}
         <button
           onClick={onClose}
           className="absolute top-3 right-3 text-neutral-400 hover:text-white transition"
@@ -53,13 +47,11 @@ export default function CreatePlaylistModal({
           <X size={20} />
         </button>
 
-        {/* Contenido */}
         <h2 className="text-white text-lg font-semibold mb-4">Crear playlist</h2>
         <p className="text-neutral-300 text-sm mb-4">
           Dale un nombre a tu nueva playlist
         </p>
 
-        {/* Formulario */}
         <form onSubmit={handleSubmit}>
           <input
             type="text"
@@ -69,8 +61,7 @@ export default function CreatePlaylistModal({
             autoFocus
             className="w-full p-3 rounded-md bg-neutral-700 text-white placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-green-500"
           />
-          
-          {/* Botones */}
+
           <div className="flex justify-end gap-3 mt-6">
             <button
               type="button"

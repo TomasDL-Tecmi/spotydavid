@@ -1,4 +1,3 @@
-// Archivo: app/hooks/usePlayer.ts
 'use client'
 
 import { useRef, useState, useEffect } from 'react'
@@ -8,7 +7,7 @@ export interface Song {
   title: string
   author: string
   thumbnail: string
-  duration: string // Este es el formato "mm:ss" (no lo usamos para la barra)
+  duration: string
 }
 
 export function usePlayer() {
@@ -19,7 +18,6 @@ export function usePlayer() {
   const [currentQueue, setCurrentQueue] = useState<Song[]>([])
   const [currentSongIndex, setCurrentSongIndex] = useState<number | null>(null)
 
-  // Estados para la barra de progreso (en segundos)
   const [currentTime, setCurrentTime] = useState(0)
   const [duration, setDuration] = useState(0)
 
@@ -45,7 +43,7 @@ export function usePlayer() {
       } catch (err) {
         console.error('Error al intentar .play()', err)
         setIsPlaying(false)
-        setCurrentSong(null) 
+        setCurrentSong(null)
       } finally {
         setIsLoadingSong(false)
       }
@@ -56,12 +54,12 @@ export function usePlayer() {
   }, [currentSong])
 
   const playSong = (song: Song, index: number, songs: Song[]) => {
-    if (isLoadingSong) return; 
+    if (isLoadingSong) return;
     if (currentSong?.id === song.id) {
       togglePlay()
       return
     }
-  
+
     setIsLoadingSong(true)
     setCurrentQueue(songs)
     setCurrentSongIndex(index)
@@ -82,14 +80,14 @@ export function usePlayer() {
         console.warn("Fallo al reanudar, forzando recarga de src...", err);
         setIsLoadingSong(true);
         const song = currentSong;
-        setCurrentSong(null); 
+        setCurrentSong(null);
         setTimeout(() => setCurrentSong(song), 10);
       })
     }
   }
-  
+
   const handleAudioError = () => {
-    if (!currentSong || isLoadingSong) return; 
+    if (!currentSong || isLoadingSong) return;
     console.error("Error posta en <audio> (ej. /api/stream dio 500)");
     setIsLoadingSong(false);
     setIsPlaying(false);
@@ -114,9 +112,6 @@ export function usePlayer() {
     setCurrentSong(prevSong)
   }
 
-  // --- NUEVAS FUNCIONES PARA EL REPRODUCTOR GRANDE ---
-  
-  // 1. Actualiza el tiempo y la duración
   const handleTimeUpdate = () => {
     const audio = audioRef.current
     if (audio && !isNaN(audio.duration) && isFinite(audio.duration)) {
@@ -125,12 +120,10 @@ export function usePlayer() {
     }
   }
 
-  // 2. Cuando termina la canción, va a la siguiente
   const onEnded = () => {
     playNext()
   }
-  
-  // 3. Permite adelantar/retroceder
+
   const seek = (time: number) => {
     const audio = audioRef.current
     if (audio) {
@@ -139,25 +132,25 @@ export function usePlayer() {
     }
   }
 
-  return { 
-    currentSong, 
-    isPlaying, 
-    isLoadingSong, 
+  return {
+    currentSong,
+    isPlaying,
+    isLoadingSong,
     audioRef,
-    playSong, 
-    togglePlay, 
-    playNext, 
+    playSong,
+    togglePlay,
+    playNext,
     playPrevious,
-    handleTimeUpdate, // Lo pasamos al <audio>
-    onEnded,          // Lo pasamos al <audio>
-    handleAudioError, // Lo pasamos al <audio>
-    
+    handleTimeUpdate,
+    onEnded,
+    handleAudioError,
+
     // ✅ Exportar todo esto para el reproductor grande:
     currentQueue,
     currentTime,
     duration,
     seek,
-    setCurrentSong, // Para hacer clic en la cola de reproducción
-    setCurrentSongIndex, // Para actualizar el índice
+    setCurrentSong,
+    setCurrentSongIndex,
   }
 }

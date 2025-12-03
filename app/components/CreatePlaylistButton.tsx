@@ -1,4 +1,3 @@
-// Archivo: app/components/CreatePlaylistButton.tsx
 'use client'
 
 import { Plus } from 'lucide-react'
@@ -9,9 +8,8 @@ interface CreatePlaylistButtonProps {
 
 export default function CreatePlaylistButton({ onClick }: CreatePlaylistButtonProps) {
   return (
-    // ✅ Usamos exactamente las mismas clases que la tarjeta de playlist
-    <div 
-      onClick={onClick} 
+    <div
+      onClick={onClick}
       className="
         group 
         relative 
@@ -25,7 +23,6 @@ export default function CreatePlaylistButton({ onClick }: CreatePlaylistButtonPr
         cursor-pointer
       "
     >
-      {/* 1. El "hueco" (la portada) */}
       <div className="
         relative 
         w-full 
@@ -40,14 +37,12 @@ export default function CreatePlaylistButton({ onClick }: CreatePlaylistButtonPr
         transition
         group-hover:bg-neutral-700
       ">
-        {/* El ícono de Más (+) */}
         <Plus size={48} className="text-gray-500 group-hover:text-white transition" />
       </div>
 
-      {/* 2. El texto */}
       <div className="mt-2 cursor-pointer px-1">
         <div className="text-sm text-white truncate font-medium">Crear nueva playlist</div>
-        <div className="text-xs text-neutral-400 truncate">&nbsp;</div> {/* Espacio vacío para alinear */}
+        <div className="text-xs text-neutral-400 truncate">&nbsp;</div>
       </div>
     </div>
   )

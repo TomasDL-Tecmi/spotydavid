@@ -1,4 +1,3 @@
-// Archivo: app/components/SearchResultsView.tsx
 'use client'
 
 import React from 'react'
@@ -21,8 +20,7 @@ export default function SearchResultsView({
   onSelectSong,
   onAddToPlaylist,
 }: SearchResultsViewProps) {
-  
-  // Vista de Carga (Skeletons)
+
   if (loading) {
     return (
       <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-4 gap-y-6 px-2">
@@ -33,7 +31,6 @@ export default function SearchResultsView({
     )
   }
 
-  // Vista de Resultados
   if (songs.length > 0) {
     return (
       <SongGrid
@@ -45,7 +42,6 @@ export default function SearchResultsView({
     )
   }
 
-  // Vista de "Sin Resultados"
   if (searchTerm.trim() !== '' && !loading) {
     return (
       <p className="text-center text-gray-500 mt-12">
@@ -54,6 +50,5 @@ export default function SearchResultsView({
     )
   }
 
-  // No debería llegar aquí, pero por si acaso
   return null
 }

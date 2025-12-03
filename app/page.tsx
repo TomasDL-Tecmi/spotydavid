@@ -1,11 +1,10 @@
-// Archivo: app/page.tsx
 'use client'
 
 import React, { useState, useRef } from 'react'
 import PlaylistView from './components/PlaylistView'
 import SearchResultsView from './components/SearchResultsView'
 import PlayerBar from './components/PlayerBar'
-import { usePlayer, Song } from './hooks/usePlayer' // ✅ Importa el hook actualizado
+import { usePlayer, Song } from './hooks/usePlayer'
 import { usePlaylists, Playlist } from './hooks/usePlaylists'
 import { ListMusic, Play, Home as HomeIcon } from 'lucide-react' 
 import CreatePlaylistModal from './components/CreatePlaylistModal'
@@ -15,14 +14,13 @@ import Toast from './components/Toast'
 import FullScreenPlayer from './components/FullScreenPlayer'
 
 export default function Home() {
-  // --- ESTADOS ---
   const [searchTerm, setSearchTerm] = useState('')
   const [songs, setSongs] = useState<Song[]>([])
   const [loading, setLoading] = useState(false)
   const abortControllerRef = useRef<AbortController | null>(null)
   const [searchSubmitted, setSearchSubmitted] = useState(false)
   
-  const player = usePlayer() // ✅ Tu hook 'player' ahora tiene todo
+  const player = usePlayer()
   const playlistsHook = usePlaylists()
 
   const [isModalOpen, setIsModalOpen] = useState(false) 
@@ -34,11 +32,9 @@ export default function Home() {
   const [toastTrigger, setToastTrigger] = useState(0)
   const [isFullScreenPlayerOpen, setIsFullScreenPlayerOpen] = useState(false)
 
-  // --- VARIABLES DERIVADAS ---
   const isAtHome = !searchSubmitted
   const editingPlaylist = playlistsHook.playlists.find(p => p.id === editingPlaylistId) || null
 
-  // --- HANDLERS (Toast, Búsqueda, Home) ---
   const showToast = (message: string) => {
     setToastMessage(message)
     setToastTrigger(Date.now())
@@ -90,7 +86,6 @@ export default function Home() {
     }
   }
 
-  // --- HANDLERS (Playlists) ---
   const handleCreatePlaylist = () => {
     setPendingSong(null) 
     setIsModalOpen(true)
@@ -144,16 +139,12 @@ export default function Home() {
     player.playSong(shuffledSongs[0], 0, shuffledSongs);
   }
 
-  // --- RENDERIZADO (JSX) ---
   return (
     <div className="min-h-screen bg-[#121212] p-4 pb-28 relative">
       
-      {/* Contenido Principal */}
       <div className="max-w-5xl mx-auto">
         
-        {/* Bloque de Home + Búsqueda */}
         <div className="relative w-full">
-          {/* Botón de Home */}
           <button
             onClick={handleGoHome}
             title="Volver al inicio"
@@ -169,7 +160,6 @@ export default function Home() {
           >
             <HomeIcon size={24} strokeWidth={2.5} /> 
           </button>
-          {/* Input de búsqueda */}
           <input
             type="text"
             value={searchTerm}
@@ -180,7 +170,6 @@ export default function Home() {
           />
         </div>
 
-        {/* Lógica de Vistas */}
         {isAtHome ? (
           <PlaylistView 
             playlists={playlistsHook.playlists}
@@ -199,7 +188,6 @@ export default function Home() {
         )}
       </div>
 
-      {/* Player Bar (Fuera del contenido principal) */}
       <PlayerBar
         currentSong={player.currentSong}
         isPlaying={player.isPlaying}
@@ -213,15 +201,13 @@ export default function Home() {
         onOpenFullScreen={() => setIsFullScreenPlayerOpen(true)}
       />
 
-      {/* Audio Tag (Invisible) */}
       <audio
         ref={player.audioRef}
-        onTimeUpdate={player.handleTimeUpdate} // ✅ Se conecta al hook
-        onEnded={player.onEnded} // ✅ Se conecta al hook
+        onTimeUpdate={player.handleTimeUpdate}
+        onEnded={player.onEnded}
         onError={player.handleAudioError}
       />
 
-      {/* --- LOS MODALS + TOAST --- */}
       <CreatePlaylistModal 
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
@@ -261,7 +247,6 @@ export default function Home() {
 
       <Toast message={toastMessage} trigger={toastTrigger} />
       
-      {/* ✅ Reproductor Grande (ahora recibe todo el objeto 'player') */}
       <FullScreenPlayer
         isOpen={isFullScreenPlayerOpen}
         onClose={() => setIsFullScreenPlayerOpen(false)}
@@ -276,9 +261,7 @@ export default function Home() {
           currentTime: player.currentTime,
           duration: player.duration,
           seek: player.seek,
-          // ✅ CAMBIO: Renombramos 'setCurrentSong' a 'playSong'
           playSong: player.playSong,
-          // (Ya no necesitamos pasar setCurrentSongIndex)
         }}
       />
     </div>

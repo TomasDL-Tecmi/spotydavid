@@ -1,13 +1,10 @@
-// Archivo: app/components/Toast.tsx
 'use client'
 
 import { useEffect, useState } from 'react'
 
 interface ToastProps {
   message: string
-  // Un "hack": cambiamos este número para re-disparar el toast
-  // si el mensaje es el mismo
-  trigger: number 
+  trigger: number
 }
 
 export default function Toast({ message, trigger }: ToastProps) {
@@ -16,15 +13,14 @@ export default function Toast({ message, trigger }: ToastProps) {
   useEffect(() => {
     if (message) {
       setIsVisible(true)
-      
-      // Timer para ocultar el toast
+
       const timer = setTimeout(() => {
         setIsVisible(false)
-      }, 2500) // 2.5 segundos
+      }, 2500)
 
       return () => clearTimeout(timer)
     }
-  }, [message, trigger]) // Se re-dispara si el mensaje o el trigger cambian
+  }, [message, trigger])
 
   return (
     <div
@@ -41,7 +37,6 @@ export default function Toast({ message, trigger }: ToastProps) {
         transition-all duration-300 ease-in-out
         ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}
       `}
-      // Evita que el usuario haga click "a través" del toast invisible
       style={{ pointerEvents: isVisible ? 'auto' : 'none' }}
     >
       {message}
